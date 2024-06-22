@@ -1,0 +1,31 @@
+[package]
+name = "cw721-metadata-onchain"
+description = "Example extending CW721 NFT to store metadata on chain"
+authors = [
+  "Ethan Frey <ethanfrey@users.noreply.github.com>",
+  "Orkun Külçe <orkun@deuslabs.fi>",
+]
+version = "1.0.0"
+edition = "2018"
+license = "Apache-2.0"
+repository = "https://github.com/CosmWasm/cw-nfts"
+homepage = "https://cosmwasm.com"
+documentation = "https://docs.cosmwasm.com"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[features]
+# for more explicit tests, cargo test --features=backtraces
+backtraces = ["cosmwasm-std/backtraces"]
+# use library feature to disable all instantiate/execute/query exports
+library = []
+
+[dependencies]
+cosmwasm-schema = "1.2.5"
+cosmwasm-std = { cosmwasm-std = "1.2.5" }
+cw2 = { cw2 = "1.0.1" }
+cw721 = { cw721 = "0.17.0" }
+cw721-base = { cw721-base = "0.17.0", features = ["library"] }
+schemars = { schemars = "0.8.12" }
+serde = { serde = "1.0.162" }

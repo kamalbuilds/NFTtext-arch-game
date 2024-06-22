@@ -1,0 +1,63 @@
+{
+  "useTemplate": false,
+  "name": "cw20-bounding",
+  "developer": {
+    "archwayd": {
+      "docker": false
+    },
+    "deployments": [
+      {
+        "project": "cw20-bonding",
+        "type": "instantiate",
+        "chainId": "constantine-3",
+        "codeId": 99,
+        "txhash": "B063068D64C4F133E2A6999626257164ED53096E11E146F7AC2D9E87693CA5CE",
+        "address": "archway1xmkg6mrz4puak9pkqe48flxr759zpw5c2r7s2cgul6zvpx66qvnqnzhdaf",
+        "admin": "archway1uwew6p8k70xa2lkzeujqcw430uky49zthsvc0y"
+      },
+      {
+        "project": "cw20-bonding",
+        "type": "store",
+        "chainId": "constantine-3",
+        "codeId": 99,
+        "txhash": "4F6112ED08E9BA0C5D8ACF940117DD0B2732F9E11104E65643D9D8211416DE1A"
+      }
+    ],
+    "scripts": {
+      "test": "cargo unit-test",
+      "build": "cargo build",
+      "optimize": "cargo run-script optimize",
+      "wasm": "cargo wasm",
+      "query": "archwayd query wasm",
+      "tx": "archwayd tx wasm execute"
+    }
+  },
+  "network": {
+    "name": "constantine",
+    "chainId": "constantine-3",
+    "type": "testnet",
+    "fees": {
+      "feeDenom": "aconst"
+    },
+    "gas": {
+      "prices": "1aconst",
+      "mode": "auto",
+      "adjustment": "1.5"
+    },
+    "wasm": {
+      "bech32Hrp": "archway",
+      "archwayd": "0.1.0",
+      "configDir": ".archway",
+      "binary": "archwayd"
+    },
+    "urls": {
+      "rpc": {
+        "url": "https://rpc.constantine.archway.tech",
+        "port": 443
+      },
+      "faucets": [
+        "https://faucet.constantine.archway.tech"
+      ]
+    }
+  }
+}

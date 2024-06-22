@@ -1,118 +1,175 @@
-import Image from "next/image";
-import { Inter } from "next/font/google";
+// Styles
+import globalStyles from "./../src/globalStyles/styles.module.sass";
+import UserPage from "../src/components/userPage";
+// Dependencies
+import { useEffect, useState } from "react";
+import { observer } from "mobx-react-lite";
 
-const inter = Inter({ subsets: ["latin"] });
+// Components
+import ModeSelector from "../src/components/ModeSelector/ModeSelector";
+import ModeToggle, { Mode } from "../src/components/ModeToggle/ModeToggle";
+import RawFooter from "../src/components/footer";
 
-export default function Home() {
+// Contexts
+import { useSigningClient } from "react-keplr";
+
+// Stores
+import nftStore from "../src/store/nftStore";
+import Wallet from "../src/components/Wallet";
+import { isMobile } from "react-device-detect";
+
+import { LoginHeader } from "../src/components/LoginHeader";
+import Select from "react-select";
+import { getCollectionDataHibridV2 } from "../src/utils/findCollections";
+import { useAtom } from "jotai/react";
+import { globalStateAtom } from "../src/jotai/activeCollection";
+import CollectionForm from "../src/components/CollectionForm";
+
+const PUBLIC_CW721_CONTRACT = process.env.NEXT_PUBLIC_CW721 as string;
+const DEBUG = process.env.NEXT_PUBLIC_APP_DEBUG === "true" || false;
+
+const Main = observer(() => {
+  let mod = [];
+  mod = [
+    {
+      name: "create",
+      action: () => {
+        nftStore.setOperatingMode("create");
+      },
+    },
+    {
+      name: "explore",
+      action: () => {
+        nftStore.setOperatingMode("explore");
+      },
+    },
+    {
+      name: "trade",
+      action: () => {
+        nftStore.setOperatingMode("trade");
+      },
+    },
+  ];
+  const [modes, setModes] = useState<Mode[]>(mod);
+  const { walletAddress, connectWallet, signingClient, client } =
+    useSigningClient();
+  const [userPageOpen, setUserPageOpen] = useState(false);
+  const [collections, setCollections] = useState([
+    { value: PUBLIC_CW721_CONTRACT, label: "Community" },
+  ]);
+  const [globalState, setGlobalState] = useAtom(globalStateAtom);
+
+  useEffect(() => {
+    if (connectWallet) {
+      connectWallet();
+    }
+  }, []);
+  
+  useEffect(() => {
+    if (client && walletAddress) {
+      const fetchData = async () => {
+        const data = await getCollectionDataHibridV2(walletAddress, client);
+        console.log("GOT ALL COLLECTIONS DATA", data);
+
+        // Create an array of new collections
+        const newCollections = data.map((collection: any) => ({
+          //TODO: add proper type
+          value: collection.address,
+          label: collection.name,
+        }));
+
+        // Update the state with new collections
+        setCollections((prevState) => {
+          // Remove duplicates
+          const existingAddresses = new Set(prevState.map((col) => col.value));
+          const uniqueNewCollections = newCollections.filter(
+            (col: any) => !existingAddresses.has(col.value)
+          );
+
+          return [...prevState, ...uniqueNewCollections];
+        });
+      };
+
+      fetchData();
+    }
+  }, [client, walletAddress, globalState]);
+
   return (
-    <main
-      className={`flex min-h-screen flex-col items-center justify-between p-24 ${inter.className}`}
-    >
-      <div className="z-10 max-w-5xl w-full items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <code className="font-mono font-bold">pages/index.tsx</code>
-        </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:h-auto lg:w-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{" "}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className="dark:invert"
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
-        </div>
-      </div>
+    <>
+      <LoginHeader
+        userPageSetter={setUserPageOpen}
+        userPageState={userPageOpen}
+      />
+      {DEBUG ? ( //replace false with "userPageOpen" to load user interface
+        <UserPage />
+      ) : (
+        <>
+          <div className={globalStyles.app}>
+            <div className={globalStyles.mainBlock}>
+              <img
+                className="side-b side-open"
+                src="logo/CustomStar.svg"
+                alt="Shinig star - the NFText logo"
+                style={{ width: "10em" }}
+              />
+              {/* <h1 className="fontAudio">NFText</h1> */}
+              <h1></h1>
+              <img
+                className="side-b side-open"
+                src="logo/nftext.svg"
+                alt="Shinig star - the NFText logo"
+                style={{ width: "10em" }}
+              />
+              <h1> </h1>
+              testnet:{" "}
+              <a
+                href="https://docs.archway.io/resources/networks"
+                target="_blank"
+              >
+                contantine-3
+              </a>
+              <div className={`${globalStyles.onlineModes}`}></div>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  margin: "10px",
+                  gap: "5px",
+                }}
+              >
+                <Select
+                  defaultValue={collections[0]}
+                  options={collections}
+                  onChange={(selectedOption) => {
+                    if (selectedOption) {
+                      console.log(
+                        `Selected option label: ${selectedOption.value}`,
+                        `Selected option value: ${selectedOption.label}`
+                      );
+                      setGlobalState({
+                        cw721: selectedOption.value,
+                        collectionName: selectedOption.label,
+                        trigger: Math.random(),
+                      });
+                    }
+                  }}
+                />
+                <CollectionForm />
+              </div>
+              {!isMobile && walletAddress && <Wallet />}
+              <div className={globalStyles.modes}>
+                <ModeToggle modes={modes} />
+              </div>
+              <ModeSelector />
+            </div>
+          </div>
+        </>
+      )}
 
-      <div className="relative flex place-items-center before:absolute before:h-[300px] before:w-full sm:before:w-[480px] before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-full sm:after:w-[240px] after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700/10 after:dark:from-sky-900 after:dark:via-[#0141ff]/40 before:lg:h-[360px]">
-        <Image
-          className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
-
-      <div className="mb-32 grid text-center lg:max-w-5xl lg:w-full lg:mb-0 lg:grid-cols-4 lg:text-left">
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Docs{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Learn{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Learn about Next.js in an interactive course with&nbsp;quizzes!
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Templates{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Discover and deploy boilerplate example Next.js&nbsp;projects.
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Deploy{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50 text-balance`}>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
-    </main>
+      <RawFooter />
+    </>
   );
-}
+});
+
+export default Main;
